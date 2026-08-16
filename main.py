@@ -1,35 +1,34 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import requests
 import os
 
 app = Flask(__name__)
 
-GREEN_API_ID = os.getenv("GREEN_API_ID")
-GREEN_API_TOKEN = os.getenv("GREEN_API_TOKEN")
-API_URL = f"https://7107.api.greenapi.com"
+GREEN_API_ID = os.environ.get("GREEN_API_ID")
+GREEN_API_TOKEN = os.environ.get("GREEN_API_TOKEN")
 
-def send_message(chatId, text):
-    url = f"{API_URL}/waInstance{GREEN_API_ID}/sendMessage/{GREEN_API_TOKEN}"
-    requests.post(url, json={"chatId": chatId, "message": text})
+@app.route('/')
+def home():
+    return "Bot is running", 200
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.json
-    print("GOT WEBHOOK!") # This will show in Render logs
+    data = request.get_json()
+    print("GOT WEBHOOK!", data) # This is key - shows in Render Logs
     
-    if data.get("typeWebhook") == "incomingMessageReceived":
-        chatId = data["senderData"]["chatId"]
-        senderId = data["senderData"]["sender"]
-
-        if "@g.us" in chatId:
-            md = data.get("messageData", {})
-            text = md.get("textMessageData", {}).get("textMessage", "") or md.get("extendedTextMessageData", {}).get("text", "")
+    if data and data.get('typeWebhook') == 'incomingMessageReceived':
+        try:
+            message = data['messageData']['textMessageData']['textMessage']
+            chat_id = data['senderData']['chatId']
             
-            if "chat.whatsapp.com" in text:
-                name = senderId.split('@')[0]
-                send_message(chatId, f"🚫 @ {name} No group links allowed!")
-                
-    return "ok", 200
+            url = f"https://api.green-api.com/waInstance{GREEN_API_ID}/sendMessage/{GREEN_API_TOKEN}"
+            payload = {"chatId": chat_id, "message": f"You said: {message}"}
+            requests.post(url, json=payload)
+            print(f"Replied to {chat_id}")
+        except Exception as e:
+            print("Error:", e)
+    
+    return jsonify({"status": "ok"}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
