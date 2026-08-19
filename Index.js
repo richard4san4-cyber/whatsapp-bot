@@ -22,7 +22,7 @@ async function startBot() {
 
     // PAIRING CODE FOR RENDER FREE
     if(!sock.authState.creds.registered){
-      const phoneNumber = '2348012345678' // <-- CHANGE THIS TO YOUR BOT NUMBER
+      const phoneNumber = '2348147369911' // <-- CHANGE THIS TO YOUR BOT NUMBER
       setTimeout(async () => {
         const code = await sock.requestPairingCode(phoneNumber)
         console.log('====================================')
