@@ -1,44 +1,59 @@
-const { default: makeWASocket, DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
-const express = require('express');
-const pino = require('pino');
-const app = express();
-const PORT = process.env.PORT || 10000;
+            const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys')
+const pino = require('pino')
+const express = require('express')
+const app = express()
+const PORT = process.env.PORT || 10000
 
-app.get('/', (req, res) => res.send('Bot is running'));
-app.listen(PORT, () => console.log(`Bot running on ${PORT}`));
+// Keep Render awake with a web endpoint
+app.get('/', (req,res) => res.send('WhatsApp Bot is running'))
+app.listen(PORT, () => console.log(`Bot running on ${PORT}`))
 
 async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    const { state, saveCreds } = await useMultiFileAuthState('./auth_info_baileys')
     
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
-        logger: pino({ level: 'info' })
-    });
+        logger: pino({ level: 'silent' }),
+        printQRInTerminal: false
+    })
 
-    sock.ev.on('creds.update', saveCreds);
+    // Save credentials
+    sock.ev.on('creds.update', saveCreds)
 
-    sock.ev.on('messages.upsert', async (m) => {
-        const msg = m.messages[0];
-        if (!msg.message || msg.key.fromMe) return;
-        
-        const from = msg.key.remoteJid;
-        const body = msg.message.conversation || msg.message.extendedTextMessage?.text;
-        
-        console.log(`Message from: ${from}, Body: ${body}`);
-        
-        await sock.sendMessage(from, { text: `You said: ${body}` });
-    });
+    // PAIRING CODE FOR RENDER FREE
+    if(!sock.authState.creds.registered){
+      const phoneNumber = '2348012345678' // <-- CHANGE THIS TO YOUR BOT NUMBER
+      setTimeout(async () => {
+        const code = await sock.requestPairingCode(phoneNumber)
+        console.log('====================================')
+        console.log('PAIRING CODE:', code)
+        console.log('Go to WhatsApp > Linked Devices > Link with phone number')
+        console.log('====================================')
+      }, 3000)
+    }
 
+    // Handle connection
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        if(qr) console.log('SCAN THIS QR IN RENDER LOGS:', qr);
+        const { connection, lastDisconnect } = update
         if(connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            if(shouldReconnect) startBot();
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut
+            console.log('Connection closed. Reconnecting:', shouldReconnect)
+            if(shouldReconnect) startBot()
+        } else if(connection === 'open') {
+            console.log('Connected to WhatsApp!')
         }
-        console.log('Connection:', connection);
-    });
+    })
+
+    // Handle messages
+    sock.ev.on('messages.upsert', async m => {
+        const msg = m.messages[0]
+        if(!msg.message || msg.key.fromMe) return
+        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+        console.log('Message from:', msg.key.remoteJid, 'Body:', text)
+        
+        // Auto reply
+        await sock.sendMessage(msg.key.remoteJid, { text: `You said: ${text}` })
+    })
 }
 
-startBot();
+startBot()
