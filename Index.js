@@ -12,7 +12,7 @@ async function startBot() {
     
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true, // This will show QR in Render logs
+        printQRInTerminal: true,
         logger: pino({ level: 'info' })
     });
 
@@ -36,12 +36,6 @@ async function startBot() {
         if(connection === 'close') {
             const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if(shouldReconnect) startBot();
-        }
-        console.log('Connection:', connection);
-    });
-}
-
-startBot();            if(shouldReconnect) startBot();
         }
         console.log('Connection:', connection);
     });
