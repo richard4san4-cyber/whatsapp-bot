@@ -1,5 +1,6 @@
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const express = require('express');
+const pino = require('pino');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -12,7 +13,7 @@ async function startBot() {
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: true, // This will show QR in Render logs
-        logger: { level: 'silent' }
+        logger: pino({ level: 'info' })
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -35,6 +36,12 @@ async function startBot() {
         if(connection === 'close') {
             const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if(shouldReconnect) startBot();
+        }
+        console.log('Connection:', connection);
+    });
+}
+
+startBot();            if(shouldReconnect) startBot();
         }
         console.log('Connection:', connection);
     });
