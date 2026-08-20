@@ -1,4 +1,4 @@
-            const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys')
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys')
 const pino = require('pino')
 const express = require('express')
 const app = express()
@@ -14,7 +14,8 @@ async function startBot() {
     const sock = makeWASocket({
         auth: state,
         logger: pino({ level: 'silent' }),
-        printQRInTerminal: false
+        printQRInTerminal: false,
+        browser: ['WhatsApp Bot', 'Chrome', '1.0.0'] // <-- THIS FIXES "COULD NOT CONNECT"
     })
 
     // Save credentials
@@ -22,7 +23,7 @@ async function startBot() {
 
     // PAIRING CODE FOR RENDER FREE
     if(!sock.authState.creds.registered){
-      const phoneNumber = '2348147369911' // <-- CHANGE THIS TO YOUR BOT NUMBER
+      const phoneNumber = '2348147369911' // <-- YOUR BOT NUMBER IS ALREADY HERE
       setTimeout(async () => {
         const code = await sock.requestPairingCode(phoneNumber)
         console.log('====================================')
