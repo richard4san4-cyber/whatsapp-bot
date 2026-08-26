@@ -46,7 +46,7 @@ async function startBot() {
         if(connection === 'close') {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut
             console.log('Connection closed. Reconnecting:', shouldReconnect)
-            if(shouldReconnect) startBot() // <-- I CLOSED THIS FOR YOU
+            if(shouldReconnect) startBot()
         } else if(connection === 'open') {
             console.log('Connected to WhatsApp!')
         }
@@ -64,16 +64,4 @@ async function startBot() {
     })
 }
 
-startBot() // <-- AND CLOSED THE FUNCTION        console.log('PAIRING CODE:', code)
-        console.log('Go to WhatsApp > Linked Devices > Link with phone number')
-        console.log('====================================')
-      }, 3000)
-    }
-
-    // Handle connection
-    sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update
-        if(connection === 'close') {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut
-            console.log('Connection closed. Reconnecting:', shouldReconnect)
-            if(shouldReconnect)
+startBot()
