@@ -30,11 +30,41 @@ async function startBot() {
 
     // PAIRING CODE FOR RENDER FREE
     if(!sock.authState.creds.registered){
-      const phoneNumber = '2348033719309' // <-- CHANGE THIS TO YOUR BOT NUMBER
+      const phoneNumber = '2348033719309' // <-- YOUR BOT NUMBER
       setTimeout(async () => {
         const code = await sock.requestPairingCode(phoneNumber)
         console.log('====================================')
         console.log('PAIRING CODE:', code)
+        console.log('Go to WhatsApp > Linked Devices > Link with phone number')
+        console.log('====================================')
+      }, 3000)
+    }
+
+    // Handle connection
+    sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update
+        if(connection === 'close') {
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut
+            console.log('Connection closed. Reconnecting:', shouldReconnect)
+            if(shouldReconnect) startBot() // <-- I CLOSED THIS FOR YOU
+        } else if(connection === 'open') {
+            console.log('Connected to WhatsApp!')
+        }
+    })
+
+    // Handle messages
+    sock.ev.on('messages.upsert', async m => {
+        const msg = m.messages[0]
+        if(!msg.message || msg.key.fromMe) return
+        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+        console.log('Message from:', msg.key.remoteJid, 'Body:', text)
+        
+        // Auto reply
+        await sock.sendMessage(msg.key.remoteJid, { text: `You said: ${text}` })
+    })
+}
+
+startBot() // <-- AND CLOSED THE FUNCTION        console.log('PAIRING CODE:', code)
         console.log('Go to WhatsApp > Linked Devices > Link with phone number')
         console.log('====================================')
       }, 3000)
