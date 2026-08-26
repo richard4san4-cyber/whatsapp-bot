@@ -1,15 +1,13 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys')
 const pino = require('pino')
 const express = require('express')
-const fs = require('fs') // <-- FOR DELETING OLD AUTH
+const fs = require('fs')
 const app = express()
 const PORT = process.env.PORT || 10000
 
-// Keep Render awake with a web endpoint
 app.get('/', (req,res) => res.send('WhatsApp Bot is running'))
 app.listen(PORT, () => console.log(`Bot running on ${PORT}`))
 
-// DELETE OLD AUTH ON START - FOR RENDER FREE
 if (fs.existsSync('./auth_info_baileys')) {
   fs.rmSync('./auth_info_baileys', { recursive: true, force: true })
   console.log('Deleted old auth folder')
@@ -22,15 +20,13 @@ async function startBot() {
         auth: state,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
-        browser: ['WhatsApp Bot', 'Chrome', '1.0.0'] // <-- FIXES "COULD NOT CONNECT"
+        browser: ['WhatsApp Bot', 'Chrome', '1.0.0']
     })
 
-    // Save credentials
     sock.ev.on('creds.update', saveCreds)
 
-    // PAIRING CODE FOR RENDER FREE
     if(!sock.authState.creds.registered){
-      const phoneNumber = '2348033719309' // <-- YOUR BOT NUMBER
+      const phoneNumber = '2348033719309'
       setTimeout(async () => {
         const code = await sock.requestPairingCode(phoneNumber)
         console.log('====================================')
@@ -40,7 +36,6 @@ async function startBot() {
       }, 3000)
     }
 
-    // Handle connection
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update
         if(connection === 'close') {
@@ -52,14 +47,11 @@ async function startBot() {
         }
     })
 
-    // Handle messages
     sock.ev.on('messages.upsert', async m => {
         const msg = m.messages[0]
         if(!msg.message || msg.key.fromMe) return
         const text = msg.message.conversation || msg.message.extendedTextMessage?.text || ''
         console.log('Message from:', msg.key.remoteJid, 'Body:', text)
-        
-        // Auto reply
         await sock.sendMessage(msg.key.remoteJid, { text: `You said: ${text}` })
     })
 }
